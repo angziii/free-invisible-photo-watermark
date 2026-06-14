@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Free browser-only invisible photo watermark tool.">
+    <title>free invisible photo watermark</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/assets/app.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace" aria-label="free invisible photo watermark">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" data-i18n="eyebrow">free invisible photo watermark</p>
+            <h1 data-i18n="title">Invisible photo watermark</h1>
+          </div>
+          <div class="top-actions">
+            <div class="language" aria-label="Language">
+              <button class="lang is-active" id="langEn" type="button" data-lang="en">EN</button>
+              <button class="lang" id="langZh" type="button" data-lang="zh">中文</button>
+            </div>
+            <div class="tabs" role="tablist" aria-label="Mode">
+              <button class="tab is-active" id="embedTab" type="button" role="tab" aria-selected="true" data-i18n="tabEmbed">Embed</button>
+              <button class="tab" id="verifyTab" type="button" role="tab" aria-selected="false" data-i18n="tabVerify">Verify</button>
+            </div>
+          </div>
+        </header>
+
+        <div class="grid">
+          <section class="panel controls" aria-label="Controls">
+            <label class="dropzone" id="dropzone">
+              <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp">
+              <span class="drop-icon" aria-hidden="true">+</span>
+              <span class="drop-title" data-i18n="choosePhoto">Choose photo</span>
+              <span class="drop-meta">PNG, JPEG, WebP</span>
+            </label>
+
+            <div class="field embed-only">
+              <label for="watermarkText" data-i18n="watermarkLine">Watermark line</label>
+              <input id="watermarkText" type="text" maxlength="200" autocomplete="off" placeholder="name, email, order id" data-i18n-placeholder="watermarkPlaceholder">
+              <p class="hint" data-i18n="watermarkHint">This site embeds a fixed 64-bit ID. Recoverable text needs more encrypted bits as text grows, so longer text is easier to damage.</p>
+            </div>
+
+            <div class="field">
+              <label for="secretKey" data-i18n="secretKey">Secret key</label>
+              <input id="secretKey" type="password" inputmode="numeric" autocomplete="off" placeholder="1">
+              <p class="hint" data-i18n="secretHint">Optional. Use the same key when embedding and verifying. Blank uses 1.</p>
+            </div>
+
+            <div class="field embed-only">
+              <label for="outputFormat" data-i18n="output">Output</label>
+              <select id="outputFormat">
+                <option value="image/png">PNG</option>
+                <option value="image/jpeg">JPEG</option>
+                <option value="image/webp">WebP</option>
+              </select>
+            </div>
+
+            <div class="status" id="status" role="status" aria-live="polite">Ready</div>
+
+            <button class="primary" id="runButton" type="button" data-i18n="embedAction">Embed watermark</button>
+            <a class="download is-disabled" id="downloadLink" download="watermarked.png" aria-disabled="true" data-i18n="download">Download</a>
+
+            <dl class="facts">
+              <div>
+                <dt data-i18n="idLabel">64-bit ID</dt>
+                <dd id="watermarkId">-</dd>
+              </div>
+              <div>
+                <dt data-i18n="imageLabel">Image</dt>
+                <dd id="imageInfo">-</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="panel preview" aria-label="Preview">
+            <div class="preview-frame" id="previewFrame">
+              <canvas id="previewCanvas" width="960" height="640"></canvas>
+              <div class="empty" id="emptyState" data-i18n="empty">No photo selected</div>
+            </div>
+          </section>
+        </div>
+
+        <footer data-i18n="footer">
+          Browser-only DWT-DCT-SVD implementation based on the MIT licensed blind_watermark project.
+        </footer>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="alert" aria-live="assertive" aria-hidden="true">
+      <div class="toast-title" id="toastTitle">Verification result</div>
+      <div class="toast-body" id="toastBody"></div>
+      <button class="toast-close" id="toastClose" type="button" aria-label="Close">×</button>
+    </div>
+
+    <script type="module" src="/assets/app.js"></script>
+  </body>
+</html>

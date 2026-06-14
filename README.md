@@ -1,177 +1,86 @@
+# free invisible photo watermark
 
+A lightweight browser-only tool for adding and verifying invisible photo watermarks.
 
+Live site: [watermark.yeangzi.com](https://watermark.yeangzi.com)
 
-# blind-watermark
+![free invisible photo watermark interface](docs/打上水印的图.jpg)
 
-Blind watermark based on DWT-DCT-SVD.
+## What it does
 
+- Embeds an invisible 64-bit watermark ID into PNG, JPEG, and WebP images.
+- Verifies a watermarked image locally in the browser.
+- Keeps image processing on the user's device. No image upload or server-side processing is required.
+- Supports an optional secret key. Use the same key for embedding and verification.
+- Includes English and Chinese UI.
 
-[![PyPI](https://img.shields.io/pypi/v/blind_watermark)](https://pypi.org/project/blind_watermark/)
-[![Build Status](https://travis-ci.com/guofei9987/blind_watermark.svg?branch=master)](https://travis-ci.com/guofei9987/blind_watermark)
-[![codecov](https://codecov.io/gh/guofei9987/blind_watermark/branch/master/graph/badge.svg)](https://codecov.io/gh/guofei9987/blind_watermark)
-[![License](https://img.shields.io/pypi/l/blind_watermark.svg)](https://github.com/guofei9987/blind_watermark/blob/master/LICENSE)
-![Python](https://img.shields.io/badge/python->=3.5-green.svg)
-![Platform](https://img.shields.io/badge/platform-windows%20|%20linux%20|%20macos-green.svg)
-[![stars](https://img.shields.io/github/stars/guofei9987/blind_watermark.svg?style=social)](https://github.com/guofei9987/blind_watermark/)
-[![fork](https://img.shields.io/github/forks/guofei9987/blind_watermark?style=social)](https://github.com/guofei9987/blind_watermark/fork)
-[![Downloads](https://pepy.tech/badge/blind-watermark)](https://pepy.tech/project/blind-watermark)
-[![Discussions](https://img.shields.io/badge/discussions-green.svg)](https://github.com/guofei9987/blind_watermark/discussions)
-<a href="https://hellogithub.com/repository/guofei9987/blind_watermark" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=3834302ff46a40f188a651ef8bd26ff5&claim_uid=se0WHo8cbiLv2w1&theme=small" alt="Featured｜HelloGitHub" /></a>
+## Why 64-bit
 
-- **Documentation:** [https://BlindWatermark.github.io/blind_watermark/#/en/](https://BlindWatermark.github.io/blind_watermark/#/en/)
-- **文档：** [https://BlindWatermark.github.io/blind_watermark/#/zh/](https://BlindWatermark.github.io/blind_watermark/#/zh/)  
-- **中文 readme** [README_cn.md](README_cn.md)
-- **Source code:** [https://github.com/guofei9987/blind_watermark](https://github.com/guofei9987/blind_watermark)
+This app stores a fixed 64-bit ID derived from the user's watermark line. The ID is short, so each bit can be repeated many times across the image, which improves robustness.
 
+Recovering the original text directly would require embedding the text itself:
 
+- ASCII text usually costs about 8 bits per character.
+- Chinese text in UTF-8 usually costs about 24 bits per character.
+- Length metadata and error correction add even more bits.
 
-# install
+Longer payloads are easier to damage through cropping, compression, resizing, brightness changes, and other edits. For that reason this app verifies the watermark ID instead of trying to restore arbitrary original text.
+
+## How it works
+
+The browser implementation follows the same core idea as the original `blind_watermark` project:
+
+1. Convert image channels into a luminance/color representation.
+2. Apply Haar DWT.
+3. Split the low-frequency area into 4 x 4 blocks.
+4. Use DCT and SVD to embed or extract one watermark bit per block.
+5. Repeat the 64-bit payload across blocks and channels for redundancy.
+
+The original upstream project is Python-based and MIT licensed:
+
+- Documentation: [BlindWatermark.github.io/blind_watermark](https://blindwatermark.github.io/blind_watermark/#/en/)
+- Source: [github.com/guofei9987/blind_watermark](https://github.com/guofei9987/blind_watermark)
+
+## Local development
+
+This site is static. Any simple HTTP server works:
+
 ```bash
-pip install blind-watermark
+python3 -m http.server 4175
 ```
 
-For the current developer version:
-```bach
-git clone git@github.com:guofei9987/blind_watermark.git
-cd blind_watermark
-pip install .
+Then open:
+
+```text
+http://localhost:4175
 ```
 
-# How to use
+Core files:
 
+- `index.html` - app shell
+- `assets/app.css` - UI styles
+- `assets/app.js` - browser UI, i18n, download and verification flow
+- `assets/watermark-worker.js` - DWT-DCT-SVD watermark implementation
+- `vercel.json` - Vercel static deployment config
 
-## Use in bash
+## Deployment
 
+The production deployment is hosted on Vercel:
+
+[https://watermark.yeangzi.com](https://watermark.yeangzi.com)
+
+Deploy from the project root:
 
 ```bash
-# embed watermark into image:
-blind_watermark --embed --pwd 1234 examples/pic/ori_img.jpeg "watermark text" examples/output/embedded.png
-# extract watermark from image:
-blind_watermark --extract --pwd 1234 --wm_shape 111 examples/output/embedded.png
+npx vercel --prod --yes
 ```
 
+## Limitations
 
+Invisible watermarks are not magic. The watermark is most reliable when the image is not heavily transformed. Rotating back to the original orientation, preserving the original crop position, and avoiding aggressive recompression all improve verification.
 
-## Use in Python
+The current app verifies a 64-bit ID. It does not decrypt or restore arbitrary original text.
 
-Original Image + Watermark = Watermarked Image
+## License
 
-![origin_image](docs/原图.jpeg) + '@guofei9987 开源万岁！' = ![打上水印的图](docs/打上水印的图.jpg)
-
-
-See the [codes](/examples/example_str.py)
-
-Embed watermark:
-```python
-from blind_watermark import WaterMark
-
-bwm1 = WaterMark(password_img=1, password_wm=1)
-bwm1.read_img('pic/ori_img.jpg')
-wm = '@guofei9987 开源万岁！'
-bwm1.read_wm(wm, mode='str')
-bwm1.embed('output/embedded.png')
-len_wm = len(bwm1.wm_bit)
-print('Put down the length of wm_bit {len_wm}'.format(len_wm=len_wm))
-```
-
-Extract watermark:
-```python
-bwm1 = WaterMark(password_img=1, password_wm=1)
-wm_extract = bwm1.extract('output/embedded.png', wm_shape=len_wm, mode='str')
-print(wm_extract)
-```
-Output:
->@guofei9987 开源万岁！
-
-### attacks on Watermarked Image
-
-
-|attack method|image after attack|extracted watermark|
-|--|--|--|
-|Rotate 45 Degrees|![旋转攻击](docs/旋转攻击.jpg)|'@guofei9987 开源万岁！'|
-|Random crop|![截屏攻击](docs/截屏攻击2_还原.jpg)|'@guofei9987 开源万岁！'|
-|Masks| ![多遮挡攻击](docs/多遮挡攻击.jpg) |'@guofei9987 开源万岁！'|
-|Vertical cut|![横向裁剪攻击](docs/横向裁剪攻击_填补.jpg)|'@guofei9987 开源万岁！'|
-|Horizontal cut|![纵向裁剪攻击](docs/纵向裁剪攻击_填补.jpg)|'@guofei9987 开源万岁！'|
-|Resize|![缩放攻击](docs/缩放攻击.jpg)|'@guofei9987 开源万岁！'|
-|Pepper Noise|![椒盐攻击](docs/椒盐攻击.jpg)|'@guofei9987 开源万岁！'|
-|Brightness 10% Down|![亮度攻击](docs/亮度攻击.jpg)|'@guofei9987 开源万岁！'|
-
-
-
-
-
-
-### embed images
-
-embed watermark:
-```python
-from blind_watermark import WaterMark
-
-bwm1 = WaterMark(password_wm=1, password_img=1)
-# read original image
-bwm1.read_img('pic/ori_img.jpg')
-# read watermark
-bwm1.read_wm('pic/watermark.png')
-# embed
-bwm1.embed('output/embedded.png')
-```
-
-
-Extract watermark:
-```python
-bwm1 = WaterMark(password_wm=1, password_img=1)
-# notice that wm_shape is necessary
-bwm1.extract(filename='output/embedded.png', wm_shape=(128, 128), out_wm_name='output/extracted.png', )
-```
-
-
-|attack method|image after attack|extracted watermark|
-|--|--|--|
-|Rotate 45 Degrees|![旋转攻击](docs/旋转攻击.jpg)|![](docs/旋转攻击_提取水印.png)|
-|Random crop|![截屏攻击](docs/截屏攻击2_还原.jpg)|![多遮挡_提取水印](docs/多遮挡攻击_提取水印.png)|
-|Mask| ![多遮挡攻击](docs/多遮挡攻击.jpg) |![多遮挡_提取水印](docs/多遮挡攻击_提取水印.png)|
-
-
-### embed array of bits
-
-See it [here](/examples/example_bit.py)
-
-
-As demo, we embed 6 bytes data:
-```python
-wm = [True, False, True, True, True, False]
-```
-
-Embed:
-```python
-from blind_watermark import WaterMark
-
-bwm1 = WaterMark(password_img=1, password_wm=1)
-bwm1.read_ori_img('pic/ori_img.jpg')
-bwm1.read_wm([True, False, True, True, True, False], mode='bit')
-bwm1.embed('output/embedded.png')
-```
-
-Extract:
-```python
-bwm1 = WaterMark(password_img=1, password_wm=1, wm_shape=6)
-wm_extract = bwm1.extract('output/打上水印的图.png', mode='bit')
-print(wm_extract)
-```
-Notice that `wm_shape` (shape of watermark) is necessary
-
-The output `wm_extract` is an array of float. set a threshold such as 0.5.
-
-
-# Concurrency
-
-```python
-WaterMark(..., processes=None)
-```
-- `processes` number of processes, can be integer. Default `None`, which means using all processes.  
-
-## Related Project
-
-- text_blind_watermark (Embed message into text): [https://github.com/guofei9987/text_blind_watermark](https://github.com/guofei9987/text_blind_watermark)  
-- HideInfo（hide as image, hide as sounds, hide as text）：[https://github.com/guofei9987/HideInfo](https://github.com/guofei9987/HideInfo)
+This repository keeps the upstream MIT license from `blind_watermark`. See [LICENSE](LICENSE).
