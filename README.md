@@ -18,6 +18,8 @@ A lightweight browser-only tool for adding and verifying invisible photo waterma
 
 Live site: [watermark.yeangzi.com](https://watermark.yeangzi.com)
 
+中文说明：[README_cn.md](README_cn.md)
+
 ![free invisible photo watermark interface](docs/打上水印的图.jpg)
 
 ## What it does
