@@ -1,18 +1,16 @@
 # free invisible photo watermark
 
-Upstream engine badges from [`guofei9987/blind_watermark`](https://github.com/guofei9987/blind_watermark):
+Project badges:
 
-[![PyPI](https://img.shields.io/pypi/v/blind_watermark)](https://pypi.org/project/blind_watermark/)
-[![Build Status](https://travis-ci.com/guofei9987/blind_watermark.svg?branch=master)](https://travis-ci.com/guofei9987/blind_watermark)
-[![codecov](https://codecov.io/gh/guofei9987/blind_watermark/branch/master/graph/badge.svg)](https://codecov.io/gh/guofei9987/blind_watermark)
-[![License](https://img.shields.io/pypi/l/blind_watermark.svg)](https://github.com/guofei9987/blind_watermark/blob/master/LICENSE)
-![Python](https://img.shields.io/badge/python-%3E%3D3.5-green.svg)
-![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-green.svg)
-[![Stars](https://img.shields.io/github/stars/guofei9987/blind_watermark.svg?style=social)](https://github.com/guofei9987/blind_watermark/)
-[![Forks](https://img.shields.io/github/forks/guofei9987/blind_watermark?style=social)](https://github.com/guofei9987/blind_watermark/fork)
-[![Downloads](https://pepy.tech/badge/blind-watermark)](https://pepy.tech/project/blind-watermark)
-[![Discussions](https://img.shields.io/badge/discussions-green.svg)](https://github.com/guofei9987/blind_watermark/discussions)
-<a href="https://hellogithub.com/repository/guofei9987/blind_watermark" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=3834302ff46a40f188a651ef8bd26ff5&claim_uid=se0WHo8cbiLv2w1&theme=small" alt="Featured on HelloGitHub" /></a>
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fwatermark.yeangzi.com&label=website)](https://watermark.yeangzi.com)
+[![Vercel](https://img.shields.io/badge/deploy-Vercel-000000?logo=vercel)](https://watermark.yeangzi.com)
+[![License](https://img.shields.io/github/license/angziii/free-invisible-photo-watermark)](LICENSE)
+[![Top language](https://img.shields.io/github/languages/top/angziii/free-invisible-photo-watermark)](https://github.com/angziii/free-invisible-photo-watermark)
+[![Repo size](https://img.shields.io/github/repo-size/angziii/free-invisible-photo-watermark)](https://github.com/angziii/free-invisible-photo-watermark)
+[![Stars](https://img.shields.io/github/stars/angziii/free-invisible-photo-watermark?style=social)](https://github.com/angziii/free-invisible-photo-watermark/stargazers)
+[![Forks](https://img.shields.io/github/forks/angziii/free-invisible-photo-watermark?style=social)](https://github.com/angziii/free-invisible-photo-watermark/forks)
+![Browser only](https://img.shields.io/badge/runtime-browser--only-006c67)
+![Local processing](https://img.shields.io/badge/privacy-local%20processing-006c67)
 
 A lightweight browser-only tool for adding and verifying invisible photo watermarks.
 
