@@ -24,6 +24,7 @@
             <div class="tabs" role="tablist" aria-label="Mode">
               <button class="tab is-active" type="button" role="tab" aria-selected="true" data-page="embed" data-i18n="tabEmbed">嵌入</button>
               <button class="tab" type="button" role="tab" aria-selected="false" data-page="extract" data-i18n="tabExtract">提取</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-page="platform" data-i18n="tabPlatform">平台</button>
               <button class="tab" type="button" role="tab" aria-selected="false" data-page="attack" data-i18n="tabAttack">攻击</button>
             </div>
           </div>
@@ -98,6 +99,58 @@
                 <option value="image/jpeg">JPEG</option>
                 <option value="image/webp">WebP</option>
               </select>
+            </div>
+
+            <div class="platform-only platform-panel">
+              <div class="field">
+                <label for="platformAction" data-i18n="platformAction">平台操作</label>
+                <select id="platformAction">
+                  <option value="embed" data-i18n-option="platformEmbed">保存内容并加水印</option>
+                  <option value="decode" data-i18n-option="platformDecode">上传识别水印</option>
+                </select>
+              </div>
+
+              <div class="field platform-embed-param">
+                <label for="platformTargetType" data-i18n="platformTargetType">内容类型</label>
+                <select id="platformTargetType">
+                  <option value="url" data-i18n-option="platformTargetUrl">网站链接</option>
+                  <option value="qr" data-i18n-option="platformTargetQr">二维码内容</option>
+                  <option value="text" data-i18n-option="platformTargetText">文本内容</option>
+                </select>
+              </div>
+
+              <div class="field platform-embed-param">
+                <label for="platformTitle" data-i18n="platformTitle">标题</label>
+                <input id="platformTitle" type="text" maxlength="120" autocomplete="off" placeholder="Campaign landing page">
+              </div>
+
+              <div class="field platform-embed-param platform-url-param">
+                <label for="platformTargetUrl" data-i18n="platformTargetUrlLabel">网站链接</label>
+                <input id="platformTargetUrl" type="url" autocomplete="off" placeholder="https://example.com">
+              </div>
+
+              <div class="field platform-embed-param platform-qr-param platform-text-param">
+                <label for="platformQrPayload" data-i18n="platformQrPayload">二维码/文本内容</label>
+                <textarea id="platformQrPayload" rows="4" maxlength="2000" autocomplete="off" placeholder="https://example.com/share/abc"></textarea>
+              </div>
+
+              <div class="field platform-embed-param">
+                <label for="platformPayloadMode" data-i18n="platformPayloadMode">写入模式</label>
+                <select id="platformPayloadMode">
+                  <option value="platform_id" data-i18n-option="platformShortId">短 ID 查链接</option>
+                  <option value="direct_text" data-i18n-option="platformDirectText">直接写入短文本</option>
+                </select>
+              </div>
+
+              <div class="field platform-direct-param">
+                <label for="platformDirectText" data-i18n="platformDirectTextLabel">直接写入文本</label>
+                <textarea id="platformDirectText" rows="3" maxlength="160" autocomplete="off" placeholder="short text"></textarea>
+              </div>
+
+              <div class="field platform-decode-param">
+                <label for="platformMinConfidence" data-i18n="platformMinConfidence">最低置信度</label>
+                <input id="platformMinConfidence" type="number" min="0" max="1" step="0.01" value="0.58">
+              </div>
             </div>
 
             <div class="attack-only attack-panel">

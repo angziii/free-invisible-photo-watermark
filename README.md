@@ -12,7 +12,7 @@ Project badges:
 ![Browser only](https://img.shields.io/badge/runtime-browser--only-006c67)
 ![Local processing](https://img.shields.io/badge/privacy-local%20processing-006c67)
 
-A browser-only workspace for embedding, extracting, and stress-testing invisible photo watermarks.
+A browser workspace and local platform MVP for embedding, extracting, and stress-testing invisible photo watermarks.
 
 Live site: [watermark.yeangzi.com](https://watermark.yeangzi.com)
 
@@ -23,6 +23,7 @@ Live site: [watermark.yeangzi.com](https://watermark.yeangzi.com)
 ## What it does
 
 - Embeds and extracts text watermarks, image watermarks, raw bit watermarks, and short 64-bit ID watermarks.
+- Adds a local platform API that stores a URL/QR/text item, embeds only a short ID, and resolves `/r/<code>` back to the saved content.
 - Supports the README-style extraction metadata: text/bit payload length and image watermark width/height.
 - Keeps image processing on the user's device. No image upload or server-side processing is required.
 - Supports separate image and watermark passwords.
@@ -50,7 +51,7 @@ The original upstream project is Python-based and MIT licensed:
 
 ## Local development
 
-This site is static. Any simple HTTP server works:
+For the browser-only demo, any simple HTTP server works:
 
 ```bash
 python3 -m http.server 4175
@@ -69,6 +70,25 @@ Core files:
 - `assets/app.js` - browser UI, i18n, download, extraction, and attack flow
 - `assets/watermark-worker.js` - DWT-DCT-SVD watermark, extraction, and image attack implementation
 - `vercel.json` - Vercel static deployment config
+
+For the platform MVP, run the local API/static server:
+
+```bash
+python3 platform_server.py --port 4175
+```
+
+Then open:
+
+```text
+http://localhost:4175
+```
+
+Platform endpoints:
+
+- `POST /api/items` - create a saved URL/QR/text item and 64-bit code.
+- `POST /api/watermark/embed` - embed the platform code into an image.
+- `POST /api/watermark/decode` - decode an uploaded image and return `found` or `not_found`.
+- `GET /r/<code>` - resolve a code to the saved target.
 
 ## Deployment
 

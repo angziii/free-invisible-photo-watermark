@@ -13,6 +13,14 @@ const elements = {
   passwordImg: document.getElementById("passwordImg"),
   passwordWm: document.getElementById("passwordWm"),
   outputFormat: document.getElementById("outputFormat"),
+  platformAction: document.getElementById("platformAction"),
+  platformTargetType: document.getElementById("platformTargetType"),
+  platformTitle: document.getElementById("platformTitle"),
+  platformTargetUrl: document.getElementById("platformTargetUrl"),
+  platformQrPayload: document.getElementById("platformQrPayload"),
+  platformPayloadMode: document.getElementById("platformPayloadMode"),
+  platformDirectText: document.getElementById("platformDirectText"),
+  platformMinConfidence: document.getElementById("platformMinConfidence"),
   attackType: document.getElementById("attackType"),
   referenceInput: document.getElementById("referenceInput"),
   referenceMeta: document.getElementById("referenceMeta"),
@@ -46,6 +54,7 @@ const translations = {
     title: "Invisible watermark workspace",
     tabEmbed: "Embed",
     tabExtract: "Extract",
+    tabPlatform: "Platform",
     tabAttack: "Attack",
     choosePhoto: "Choose image",
     watermarkType: "Watermark type",
@@ -64,6 +73,21 @@ const translations = {
     passwordImg: "Image password",
     passwordWm: "Watermark password",
     output: "Output format",
+    platformAction: "Platform action",
+    platformEmbed: "Save content + watermark",
+    platformDecode: "Decode uploaded image",
+    platformTargetType: "Content type",
+    platformTargetUrl: "Website URL",
+    platformTargetQr: "QR payload",
+    platformTargetText: "Text payload",
+    platformTitle: "Title",
+    platformTargetUrlLabel: "Website URL",
+    platformQrPayload: "QR / text payload",
+    platformPayloadMode: "Payload mode",
+    platformShortId: "Short ID lookup",
+    platformDirectText: "Direct short text",
+    platformDirectTextLabel: "Direct text",
+    platformMinConfidence: "Minimum confidence",
     attackType: "Action",
     attackCrop: "Crop + resize",
     attackRecoverCrop: "Recover crop",
@@ -93,6 +117,8 @@ const translations = {
     estimateSteps: "Search steps",
     embedAction: "Embed watermark",
     extractAction: "Extract watermark",
+    platformEmbedAction: "Create platform watermark",
+    platformDecodeAction: "Decode platform watermark",
     attackAction: "Run action",
     download: "Download",
     downloading: "Downloading...",
@@ -114,6 +140,10 @@ const translations = {
     processing: "Processing...",
     embedded: "Watermark embedded.",
     extracted: "Watermark extracted.",
+    platformEmbedded: "Platform watermark embedded.",
+    platformDecoded: "Platform watermark decoded.",
+    platformNotFound: "No trusted platform watermark found.",
+    platformUnavailable: "Platform API unavailable. Run python3 platform_server.py and open that local server.",
     processed: "Action complete.",
     errorTitle: "Processing failed",
     noDownloadTitle: "No downloadable file",
@@ -125,6 +155,7 @@ const translations = {
     title: "隐形水印工作台",
     tabEmbed: "嵌入",
     tabExtract: "提取",
+    tabPlatform: "平台",
     tabAttack: "攻击",
     choosePhoto: "选择图片",
     watermarkType: "水印类型",
@@ -143,6 +174,21 @@ const translations = {
     passwordImg: "图片密码",
     passwordWm: "水印密码",
     output: "输出格式",
+    platformAction: "平台操作",
+    platformEmbed: "保存内容并加水印",
+    platformDecode: "上传识别水印",
+    platformTargetType: "内容类型",
+    platformTargetUrl: "网站链接",
+    platformTargetQr: "二维码内容",
+    platformTargetText: "文本内容",
+    platformTitle: "标题",
+    platformTargetUrlLabel: "网站链接",
+    platformQrPayload: "二维码/文本内容",
+    platformPayloadMode: "写入模式",
+    platformShortId: "短 ID 查链接",
+    platformDirectText: "直接写入短文本",
+    platformDirectTextLabel: "直接写入文本",
+    platformMinConfidence: "最低置信度",
     attackType: "处理",
     attackCrop: "裁剪 + 缩放",
     attackRecoverCrop: "按参数恢复裁剪",
@@ -172,6 +218,8 @@ const translations = {
     estimateSteps: "搜索步数",
     embedAction: "嵌入水印",
     extractAction: "提取水印",
+    platformEmbedAction: "生成平台水印",
+    platformDecodeAction: "识别平台水印",
     attackAction: "执行处理",
     download: "下载",
     downloading: "正在下载...",
@@ -193,6 +241,10 @@ const translations = {
     processing: "正在处理...",
     embedded: "已嵌入水印。",
     extracted: "已提取水印。",
+    platformEmbedded: "已生成平台水印。",
+    platformDecoded: "已识别平台水印。",
+    platformNotFound: "没有找到可信的平台水印。",
+    platformUnavailable: "平台 API 不可用。请运行 python3 platform_server.py 并打开这个本地服务。",
     processed: "处理完成。",
     errorTitle: "处理失败",
     noDownloadTitle: "没有可下载文件",
@@ -237,6 +289,9 @@ elements.langZh.addEventListener("click", () => setLanguage("zh"));
 elements.fileInput.addEventListener("change", () => loadSelectedFile(elements.fileInput.files?.[0], "main"));
 elements.watermarkImageInput.addEventListener("change", () => loadSelectedFile(elements.watermarkImageInput.files?.[0], "watermark"));
 elements.referenceInput.addEventListener("change", () => loadSelectedFile(elements.referenceInput.files?.[0], "reference"));
+elements.platformAction.addEventListener("change", updateControls);
+elements.platformTargetType.addEventListener("change", updateControls);
+elements.platformPayloadMode.addEventListener("change", updateControls);
 elements.attackType.addEventListener("change", updateControls);
 elements.runButton.addEventListener("click", run);
 elements.downloadLink.addEventListener("click", handleDownloadClick);
@@ -320,6 +375,31 @@ async function fileToImageData(file) {
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
+async function dataUrlToImageData(dataUrl) {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  return fileToImageData(blob);
+}
+
+async function imageDataToDataUrl(imageData, mime = "image/png") {
+  const canvas = document.createElement("canvas");
+  canvas.width = imageData.width;
+  canvas.height = imageData.height;
+  canvas.getContext("2d").putImageData(imageData, 0, 0);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("Could not encode image."));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error("Could not read encoded image."));
+      reader.readAsDataURL(blob);
+    }, mime, mime === "image/jpeg" ? 0.94 : undefined);
+  });
+}
+
 async function run() {
   if (!state.currentImageData) {
     setStatus(t("chooseFirst"), true);
@@ -331,6 +411,7 @@ async function run() {
   try {
     if (state.page === "embed") await runEmbed();
     if (state.page === "extract") await runExtract();
+    if (state.page === "platform") await runPlatform();
     if (state.page === "attack") await runAttack();
   } catch (error) {
     setStatus(error.message || t("errorTitle"), true);
@@ -414,6 +495,87 @@ async function runAttack() {
   });
   setResultText(formatAttackResult(result));
   setStatus(t("processed"));
+}
+
+async function runPlatform() {
+  if (elements.platformAction.value === "decode") {
+    await runPlatformDecode();
+  } else {
+    await runPlatformEmbed();
+  }
+}
+
+async function runPlatformEmbed() {
+  setStatus(t("embedding"));
+  clearResult();
+  const payloadMode = elements.platformPayloadMode.value;
+  const result = await callPlatformApi("/api/watermark/embed", {
+    image_data: await imageDataToDataUrl(state.currentImageData, elements.outputFormat.value),
+    output_mime: elements.outputFormat.value,
+    payload_mode: payloadMode,
+    direct_text: elements.platformDirectText.value.trim(),
+    item: readPlatformItem(),
+  });
+
+  const imageData = await dataUrlToImageData(result.image_data);
+  state.currentImageData = imageData;
+  state.lastMeta = {
+    mode: "id",
+    bitLength: result.code_bits || result.bit_length,
+    summary: result.code ? `${result.code} / ${result.payload_mode}` : result.payload_mode,
+    watermarkId: result.code,
+    width: imageData.width,
+    height: imageData.height,
+  };
+  drawPreview(imageData);
+  await prepareDownload(elements.downloadLink, imageData, "platform-watermarked");
+  updateFacts(state.lastMeta);
+  setResultText(formatPlatformEmbedResult(result));
+  setStatus(t("platformEmbedded"));
+}
+
+async function runPlatformDecode() {
+  setStatus(t("extracting"));
+  clearResult();
+  const result = await callPlatformApi("/api/watermark/decode", {
+    image_data: await imageDataToDataUrl(state.currentImageData, "image/png"),
+    payload_mode: "platform_id",
+    min_confidence: Number.parseFloat(elements.platformMinConfidence.value || "0.58"),
+  });
+  updateFacts({
+    bitLength: 64,
+    summary: result.code || result.status,
+    width: state.currentImageData.width,
+    height: state.currentImageData.height,
+  });
+  setResultText(formatPlatformDecodeResult(result));
+  setStatus(result.status === "found" ? t("platformDecoded") : t("platformNotFound"), result.status !== "found");
+}
+
+function readPlatformItem() {
+  const targetType = elements.platformTargetType.value;
+  return {
+    target_type: targetType,
+    title: elements.platformTitle.value.trim(),
+    target_url: elements.platformTargetUrl.value.trim(),
+    qr_payload: elements.platformQrPayload.value.trim(),
+  };
+}
+
+async function callPlatformApi(path, payload) {
+  let response;
+  try {
+    response = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    throw new Error(t("platformUnavailable"));
+  }
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error || t("platformUnavailable"));
+  return body;
 }
 
 function readAttackParams() {
@@ -503,6 +665,43 @@ function formatAttackResult(result) {
   return lines.join("\n");
 }
 
+function formatPlatformEmbedResult(result) {
+  if (result.payload_mode === "direct_text") {
+    return [
+      `${t("platformPayloadMode")}: ${t("platformDirectText")}`,
+      `${t("bitLength")}: ${result.bit_length}`,
+      "robustness: low",
+      `algorithm: ${result.algorithm}`,
+    ].join("\n");
+  }
+  const lines = [
+    `${t("platformPayloadMode")}: ${t("platformShortId")}`,
+    `code: ${result.code}`,
+    `resolve: ${new URL(result.resolve_url, window.location.href).href}`,
+    `algorithm: ${result.algorithm}`,
+    `ecc: ${result.ecc_level}`,
+  ];
+  if (result.item?.title) lines.push(`title: ${result.item.title}`);
+  if (result.item?.target_url) lines.push(`url: ${result.item.target_url}`);
+  if (result.item?.qr_payload) lines.push(`payload: ${result.item.qr_payload}`);
+  return lines.join("\n");
+}
+
+function formatPlatformDecodeResult(result) {
+  const lines = [
+    `status: ${result.status}`,
+    `code: ${result.code || "-"}`,
+    `confidence: ${result.confidence}%`,
+  ];
+  if (result.variant) lines.push(`variant: ${result.variant}`);
+  if (result.status === "found" && result.item) {
+    lines.push(`title: ${result.item.title || "-"}`);
+    if (result.item.target_url) lines.push(`open: ${result.item.target_url}`);
+    if (result.item.qr_payload) lines.push(`payload: ${result.item.qr_payload}`);
+  }
+  return lines.join("\n");
+}
+
 async function prepareDownload(link, imageData, suffix) {
   const isResult = link === elements.resultDownloadLink;
   const mime = isResult ? "image/png" : elements.outputFormat.value;
@@ -566,9 +765,18 @@ function setPage(page) {
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-selected", String(isActive));
   });
-  elements.runButton.textContent = page === "embed" ? t("embedAction") : page === "extract" ? t("extractAction") : t("attackAction");
+  elements.runButton.textContent = actionLabelForPage(page);
   updateControls();
   setStatus(t("ready"));
+}
+
+function actionLabelForPage(page) {
+  if (page === "embed") return t("embedAction");
+  if (page === "extract") return t("extractAction");
+  if (page === "platform") {
+    return elements.platformAction.value === "decode" ? t("platformDecodeAction") : t("platformEmbedAction");
+  }
+  return t("attackAction");
 }
 
 function setWatermarkMode(mode) {
@@ -582,12 +790,13 @@ function setWatermarkMode(mode) {
 
 function updateControls() {
   const page = state.page;
-  document.querySelectorAll(".embed-only, .extract-only, .attack-only, .watermark-only, .watermark-controls, .text-mode, .img-mode, .bit-mode, .id-mode").forEach((node) => {
+  document.querySelectorAll(".embed-only, .extract-only, .platform-only, .attack-only, .watermark-only, .watermark-controls, .text-mode, .img-mode, .bit-mode, .id-mode").forEach((node) => {
     let hidden = false;
     if (node.classList.contains("embed-only") && page !== "embed") hidden = true;
     if (node.classList.contains("extract-only") && page !== "extract") hidden = true;
+    if (node.classList.contains("platform-only") && page !== "platform") hidden = true;
     if (node.classList.contains("attack-only") && page !== "attack") hidden = true;
-    if ((node.classList.contains("watermark-only") || node.classList.contains("watermark-controls")) && page === "attack") hidden = true;
+    if ((node.classList.contains("watermark-only") || node.classList.contains("watermark-controls")) && (page === "attack" || page === "platform")) hidden = true;
 
     const modeMatches = [];
     if (node.classList.contains("text-mode")) modeMatches.push("str");
@@ -616,6 +825,16 @@ function updateControls() {
   Object.entries(attackMap).forEach(([className, visible]) => {
     document.querySelectorAll(`.${className}`).forEach((node) => setHidden(node, page !== "attack" || !visible));
   });
+
+  const platformAction = elements.platformAction.value;
+  const targetType = elements.platformTargetType.value;
+  const payloadMode = elements.platformPayloadMode.value;
+  document.querySelectorAll(".platform-embed-param").forEach((node) => setHidden(node, page !== "platform" || platformAction !== "embed"));
+  document.querySelectorAll(".platform-decode-param").forEach((node) => setHidden(node, page !== "platform" || platformAction !== "decode"));
+  document.querySelectorAll(".platform-url-param").forEach((node) => setHidden(node, page !== "platform" || platformAction !== "embed" || payloadMode === "direct_text" || targetType !== "url"));
+  document.querySelectorAll(".platform-qr-param, .platform-text-param").forEach((node) => setHidden(node, page !== "platform" || platformAction !== "embed" || payloadMode === "direct_text" || !["qr", "text"].includes(targetType)));
+  document.querySelectorAll(".platform-direct-param").forEach((node) => setHidden(node, page !== "platform" || platformAction !== "embed" || payloadMode !== "direct_text"));
+  elements.runButton.textContent = actionLabelForPage(page);
 }
 
 function setHidden(node, hidden) {
@@ -640,7 +859,7 @@ function setLanguage(language) {
   });
 
   elements.toastClose.setAttribute("aria-label", t("close"));
-  elements.runButton.textContent = state.page === "embed" ? t("embedAction") : state.page === "extract" ? t("extractAction") : t("attackAction");
+  elements.runButton.textContent = actionLabelForPage(state.page);
   if (!elements.downloadLink.classList.contains("is-downloading")) elements.downloadLink.textContent = t("download");
   if (!elements.resultDownloadLink.classList.contains("is-downloading")) elements.resultDownloadLink.textContent = t("downloadResult");
 }
@@ -667,6 +886,14 @@ function setBusy(isBusy) {
     elements.passwordImg,
     elements.passwordWm,
     elements.outputFormat,
+    elements.platformAction,
+    elements.platformTargetType,
+    elements.platformTitle,
+    elements.platformTargetUrl,
+    elements.platformQrPayload,
+    elements.platformPayloadMode,
+    elements.platformDirectText,
+    elements.platformMinConfidence,
     elements.attackType,
     elements.referenceInput,
   ].forEach((element) => {

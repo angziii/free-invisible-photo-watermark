@@ -101,7 +101,7 @@ h1 {
 }
 
 .tabs {
-  width: 318px;
+  width: 424px;
   max-width: 100%;
 }
 
@@ -240,7 +240,8 @@ h1 {
   gap: 10px;
 }
 
-.attack-panel {
+.attack-panel,
+.platform-panel {
   display: grid;
   gap: 12px;
 }

@@ -1,6 +1,6 @@
 # free invisible photo watermark
 
-基于浏览器本地处理的免费隐形照片水印工具。
+基于浏览器本地处理的免费隐形照片水印工具，并带一个本地平台 MVP。
 
 English README: [README.md](README.md)
 
@@ -24,6 +24,7 @@ English README: [README.md](README.md)
 
 - 给 PNG、JPEG、WebP 图片嵌入不可见的 64-bit 水印 ID。
 - 在浏览器里验证带水印图片，提取 64-bit ID。
+- 本地平台 API 可以保存网站、二维码内容或文本，只把短 ID 写入图片，再通过 `/r/<code>` 找回内容。
 - 图片只在用户设备本地处理，不上传服务器。
 - 支持可选密钥；加水印和验证时使用同一个密钥即可。
 - 提供英文和中文界面。
@@ -58,7 +59,7 @@ English README: [README.md](README.md)
 
 ## 本地运行
 
-这是一个静态网站，任意简单 HTTP 服务都可以运行：
+浏览器演示版是静态网站，任意简单 HTTP 服务都可以运行：
 
 ```bash
 python3 -m http.server 4175
@@ -77,6 +78,25 @@ http://localhost:4175
 - `assets/app.js` - UI、双语切换、下载和验证流程
 - `assets/watermark-worker.js` - DWT-DCT-SVD 水印算法实现
 - `vercel.json` - Vercel 静态部署配置
+
+平台 MVP 需要运行本地 API/静态服务：
+
+```bash
+python3 platform_server.py --port 4175
+```
+
+然后打开：
+
+```text
+http://localhost:4175
+```
+
+平台接口：
+
+- `POST /api/items` - 创建保存的网站、二维码内容或文本，并生成 64-bit code。
+- `POST /api/watermark/embed` - 把平台 code 嵌入图片。
+- `POST /api/watermark/decode` - 上传图片识别，返回 `found` 或 `not_found`。
+- `GET /r/<code>` - 根据 code 打开保存内容。
 
 ## 部署
 

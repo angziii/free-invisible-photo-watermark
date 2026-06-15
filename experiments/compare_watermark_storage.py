@@ -414,6 +414,8 @@ def run_benchmark(args: argparse.Namespace) -> tuple[list[dict[str, object]], di
     images = build_test_images(args.image_size)
     payloads = [Payload(key, text) for key, text in DEFAULT_PAYLOADS]
     experiments = build_experiments()
+    issued_id_hexes = {payload.key: bits_to_hex(id64_bits(payload.text)) for payload in payloads}
+    issued_id_set = set(issued_id_hexes.values())
 
     original_temp, WaterMark = load_original_watermark(REPO_ROOT, args.git_ref)
     rows: list[dict[str, object]] = []
@@ -460,6 +462,12 @@ def run_benchmark(args: argparse.Namespace) -> tuple[list[dict[str, object]], di
                         row[f"{strategy.key}_accuracy"] = round(accuracy, 2)
                         row[f"{strategy.key}_bit_errors"] = bit_errors
                         row[f"{strategy.key}_exact"] = exact
+                        row[f"{strategy.key}_exact_success"] = exact
+                        row[f"{strategy.key}_confidence"] = round(accuracy / 100, 4)
+                        if strategy.key == "stored_id_64":
+                            decoded_hex = bits_to_hex(extracted)
+                            row["stored_id_64_decoded_hex"] = decoded_hex
+                            row["stored_id_64_false_positive"] = decoded_hex != id_hex and decoded_hex in issued_id_set
 
                     row["attacked_psnr_db"] = round(float(np.mean(psnr_values)), 2)
                     row["winner"] = winner(
@@ -502,6 +510,10 @@ def aggregate(rows: list[dict[str, object]], group_keys: list[str]) -> list[dict
                 "stored_id_64_avg_accuracy": round(float(id_acc.mean()), 2),
                 "python_original_text_exact": sum(bool(row["python_original_text_exact"]) for row in bucket),
                 "stored_id_64_exact": sum(bool(row["stored_id_64_exact"]) for row in bucket),
+                "python_original_text_exact_success_rate": round(100 * sum(bool(row["python_original_text_exact_success"]) for row in bucket) / len(bucket), 2),
+                "stored_id_64_exact_success_rate": round(100 * sum(bool(row["stored_id_64_exact_success"]) for row in bucket) / len(bucket), 2),
+                "stored_id_64_false_positive_rate": round(100 * sum(bool(row.get("stored_id_64_false_positive")) for row in bucket) / len(bucket), 2),
+                "stored_id_64_avg_confidence": round(float(np.array([float(row["stored_id_64_confidence"]) for row in bucket], dtype=float).mean()), 4),
                 "python_original_text_wins": sum(row["winner"] == "python_original_text" for row in bucket),
                 "stored_id_64_wins": sum(row["winner"] == "stored_id_64" for row in bucket),
                 "ties": sum(row["winner"] == "tie" for row in bucket),
@@ -571,6 +583,8 @@ def write_markdown(
         "",
         f"- Original Python text average accuracy: `{overall['python_original_text_avg_accuracy']}%`",
         f"- Stored 64-bit ID average accuracy: `{overall['stored_id_64_avg_accuracy']}%`",
+        f"- Stored 64-bit ID exact success rate: `{overall['stored_id_64_exact_success_rate']}%`",
+        f"- Stored 64-bit ID false positive rate: `{overall['stored_id_64_false_positive_rate']}%`",
         f"- Exact matches: original text `{overall['python_original_text_exact']}`, stored ID `{overall['stored_id_64_exact']}`",
         f"- Wins: original text `{overall['python_original_text_wins']}`, stored ID `{overall['stored_id_64_wins']}`, ties `{overall['ties']}`",
         "",
@@ -585,6 +599,8 @@ def write_markdown(
                 ("Rows", "rows"),
                 ("Text Avg", "python_original_text_avg_accuracy"),
                 ("ID Avg", "stored_id_64_avg_accuracy"),
+                ("ID Exact %", "stored_id_64_exact_success_rate"),
+                ("ID False + %", "stored_id_64_false_positive_rate"),
                 ("Winner", "winner"),
             ],
         )
@@ -598,6 +614,7 @@ def write_markdown(
                 ("Rows", "rows"),
                 ("Text Avg", "python_original_text_avg_accuracy"),
                 ("ID Avg", "stored_id_64_avg_accuracy"),
+                ("ID Exact %", "stored_id_64_exact_success_rate"),
                 ("Winner", "winner"),
             ],
         )
@@ -611,6 +628,7 @@ def write_markdown(
                 ("Rows", "rows"),
                 ("Text Avg", "python_original_text_avg_accuracy"),
                 ("ID Avg", "stored_id_64_avg_accuracy"),
+                ("ID Exact %", "stored_id_64_exact_success_rate"),
                 ("Winner", "winner"),
             ],
         )
@@ -625,6 +643,7 @@ def write_markdown(
                 ("Rows", "rows"),
                 ("Text Avg", "python_original_text_avg_accuracy"),
                 ("ID Avg", "stored_id_64_avg_accuracy"),
+                ("ID Exact %", "stored_id_64_exact_success_rate"),
                 ("Winner", "winner"),
             ],
         )
@@ -638,6 +657,7 @@ def write_markdown(
                 ("Category", "attack_category"),
                 ("Text Avg", "python_original_text_avg_accuracy"),
                 ("ID Avg", "stored_id_64_avg_accuracy"),
+                ("ID Exact %", "stored_id_64_exact_success_rate"),
                 ("Winner", "winner"),
             ],
         )
@@ -656,6 +676,11 @@ def print_summary(metadata: dict[str, object], overall: dict[str, object], by_at
         "Average accuracy: "
         f"original text={overall['python_original_text_avg_accuracy']}%, "
         f"stored_id_64={overall['stored_id_64_avg_accuracy']}%"
+    )
+    print(
+        "Stored ID product metrics: "
+        f"exact_success={overall['stored_id_64_exact_success_rate']}%, "
+        f"false_positive={overall['stored_id_64_false_positive_rate']}%"
     )
     print(
         "Exact matches: "
