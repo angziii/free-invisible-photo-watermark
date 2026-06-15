@@ -1,29 +1,30 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Free browser-only invisible photo watermark tool.">
-    <title>free invisible photo watermark</title>
+    <meta name="description" content="Browser-only blind watermark workspace.">
+    <title>Invisible watermark workspace</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/assets/app.css">
   </head>
   <body>
     <main class="shell">
-      <section class="workspace" aria-label="free invisible photo watermark">
+      <section class="workspace" aria-label="Invisible watermark workspace">
         <header class="topbar">
           <div>
-            <p class="eyebrow" data-i18n="eyebrow">free invisible photo watermark</p>
-            <h1 data-i18n="title">Invisible photo watermark</h1>
+            <p class="eyebrow" data-i18n="eyebrow">blind watermark</p>
+            <h1 data-i18n="title">Invisible watermark workspace</h1>
           </div>
           <div class="top-actions">
             <div class="language" aria-label="Language">
-              <button class="lang is-active" id="langEn" type="button" data-lang="en">EN</button>
-              <button class="lang" id="langZh" type="button" data-lang="zh">中文</button>
+              <button class="lang" id="langEn" type="button" data-lang="en">EN</button>
+              <button class="lang is-active" id="langZh" type="button" data-lang="zh">中文</button>
             </div>
             <div class="tabs" role="tablist" aria-label="Mode">
-              <button class="tab is-active" id="embedTab" type="button" role="tab" aria-selected="true" data-i18n="tabEmbed">Embed</button>
-              <button class="tab" id="verifyTab" type="button" role="tab" aria-selected="false" data-i18n="tabVerify">Verify</button>
+              <button class="tab is-active" type="button" role="tab" aria-selected="true" data-page="embed" data-i18n="tabEmbed">嵌入</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-page="extract" data-i18n="tabExtract">提取</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-page="attack" data-i18n="tabAttack">攻击</button>
             </div>
           </div>
         </header>
@@ -33,24 +34,65 @@
             <label class="dropzone" id="dropzone">
               <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp">
               <span class="drop-icon" aria-hidden="true">+</span>
-              <span class="drop-title" data-i18n="choosePhoto">Choose photo</span>
-              <span class="drop-meta">PNG, JPEG, WebP</span>
+              <span class="drop-title" data-i18n="choosePhoto">选择图片</span>
+              <span class="drop-meta" id="fileMeta">PNG / JPEG / WebP</span>
             </label>
 
-            <div class="field embed-only">
-              <label for="watermarkText" data-i18n="watermarkLine">Watermark line</label>
-              <input id="watermarkText" type="text" maxlength="200" autocomplete="off" placeholder="name, email, order id" data-i18n-placeholder="watermarkPlaceholder">
-              <p class="hint" data-i18n="watermarkHint">This site embeds a fixed 64-bit ID. Recoverable text needs more encrypted bits as text grows, so longer text is easier to damage.</p>
+            <div class="control-block watermark-controls">
+              <label data-i18n="watermarkType">水印类型</label>
+              <div class="segmented" id="watermarkModeGroup" role="group" aria-label="Watermark type">
+                <button class="segment is-active" type="button" data-wm-mode="str" data-i18n="wmText">文字</button>
+                <button class="segment" type="button" data-wm-mode="img" data-i18n="wmImage">图片</button>
+                <button class="segment" type="button" data-wm-mode="bit" data-i18n="wmBit">Bit</button>
+                <button class="segment" type="button" data-wm-mode="id" data-i18n="wmId">64-bit ID</button>
+              </div>
             </div>
 
-            <div class="field">
-              <label for="secretKey" data-i18n="secretKey">Secret key</label>
-              <input id="secretKey" type="password" inputmode="numeric" autocomplete="off" placeholder="1">
-              <p class="hint" data-i18n="secretHint">Optional. Use the same key when embedding and verifying. Blank uses 1.</p>
+            <div class="field embed-only text-mode id-mode">
+              <label for="watermarkText" data-i18n="watermarkText">水印文本</label>
+              <textarea id="watermarkText" rows="3" maxlength="2000" autocomplete="off" placeholder="@guofei9987 开源万岁！" data-i18n-placeholder="watermarkTextPlaceholder"></textarea>
             </div>
 
-            <div class="field embed-only">
-              <label for="outputFormat" data-i18n="output">Output</label>
+            <label class="file-row embed-only img-mode" id="watermarkImageRow">
+              <input id="watermarkImageInput" type="file" accept="image/png,image/jpeg,image/webp">
+              <span data-i18n="chooseWatermarkImage">选择水印图片</span>
+              <strong id="watermarkImageMeta">-</strong>
+            </label>
+
+            <div class="field embed-only bit-mode">
+              <label for="bitString" data-i18n="bitString">Bit 序列</label>
+              <textarea id="bitString" rows="3" spellcheck="false" placeholder="101110" data-i18n-placeholder="bitPlaceholder"></textarea>
+            </div>
+
+            <div class="field extract-only text-mode bit-mode">
+              <label for="bitLength" data-i18n="bitLength">水印 bit 长度</label>
+              <input id="bitLength" type="number" min="1" step="1" placeholder="111">
+            </div>
+
+            <div class="inline-grid extract-only img-mode">
+              <div class="field">
+                <label for="wmWidth" data-i18n="wmWidth">水印宽</label>
+                <input id="wmWidth" type="number" min="1" step="1" placeholder="128">
+              </div>
+              <div class="field">
+                <label for="wmHeight" data-i18n="wmHeight">水印高</label>
+                <input id="wmHeight" type="number" min="1" step="1" placeholder="128">
+              </div>
+            </div>
+
+            <div class="inline-grid watermark-only">
+              <div class="field">
+                <label for="passwordImg" data-i18n="passwordImg">图片密码</label>
+                <input id="passwordImg" type="number" inputmode="numeric" autocomplete="off" value="1">
+              </div>
+              <div class="field">
+                <label for="passwordWm" data-i18n="passwordWm">水印密码</label>
+                <input id="passwordWm" type="number" inputmode="numeric" autocomplete="off" value="1">
+              </div>
+            </div>
+
+            <div class="field embed-only output-row">
+              <label for="outputFormat" data-i18n="output">输出格式</label>
               <select id="outputFormat">
                 <option value="image/png">PNG</option>
                 <option value="image/jpeg">JPEG</option>
@@ -58,39 +100,174 @@
               </select>
             </div>
 
-            <div class="status" id="status" role="status" aria-live="polite">Ready</div>
+            <div class="attack-only attack-panel">
+              <div class="field">
+                <label for="attackType" data-i18n="attackType">处理</label>
+                <select id="attackType">
+                  <option value="crop" data-i18n-option="attackCrop">裁剪 + 缩放</option>
+                  <option value="recoverCrop" data-i18n-option="attackRecoverCrop">按参数恢复裁剪</option>
+                  <option value="estimateCrop" data-i18n-option="attackEstimateCrop">估计并恢复裁剪</option>
+                  <option value="resize" data-i18n-option="attackResize">缩放</option>
+                  <option value="recoverResize" data-i18n-option="attackRecoverResize">恢复缩放</option>
+                  <option value="brightness" data-i18n-option="attackBrightness">亮度</option>
+                  <option value="recoverBrightness" data-i18n-option="attackRecoverBrightness">恢复亮度</option>
+                  <option value="shelter" data-i18n-option="attackShelter">遮挡</option>
+                  <option value="saltPepper" data-i18n-option="attackSalt">椒盐</option>
+                  <option value="rotate" data-i18n-option="attackRotate">旋转</option>
+                  <option value="recoverRotate" data-i18n-option="attackRecoverRotate">恢复旋转</option>
+                </select>
+              </div>
 
-            <button class="primary" id="runButton" type="button" data-i18n="embedAction">Embed watermark</button>
-            <a class="download is-disabled" id="downloadLink" download="watermarked.png" aria-disabled="true" data-i18n="download">Download</a>
+              <label class="file-row estimate-param">
+                <input id="referenceInput" type="file" accept="image/png,image/jpeg,image/webp">
+                <span data-i18n="chooseReference">选择参考原图</span>
+                <strong id="referenceMeta">-</strong>
+              </label>
+
+              <div class="inline-grid crop-param recover-crop-param">
+                <div class="field">
+                  <label for="cropX1">x1</label>
+                  <input id="cropX1" type="number" min="0" max="0.99" step="0.01" value="0.1">
+                </div>
+                <div class="field">
+                  <label for="cropY1">y1</label>
+                  <input id="cropY1" type="number" min="0" max="0.99" step="0.01" value="0.1">
+                </div>
+                <div class="field">
+                  <label for="cropX2">x2</label>
+                  <input id="cropX2" type="number" min="0.01" max="1" step="0.01" value="0.7">
+                </div>
+                <div class="field">
+                  <label for="cropY2">y2</label>
+                  <input id="cropY2" type="number" min="0.01" max="1" step="0.01" value="0.6">
+                </div>
+              </div>
+
+              <div class="field crop-param">
+                <label for="scale" data-i18n="cropScale">缩放倍数</label>
+                <input id="scale" type="number" min="0.05" step="0.05" value="0.7">
+              </div>
+
+              <div class="inline-grid resize-param recover-resize-param recover-crop-param">
+                <div class="field resize-param">
+                  <label for="resizeWidth" data-i18n="resizeWidth">输出宽</label>
+                  <input id="resizeWidth" type="number" min="1" step="1" value="400">
+                </div>
+                <div class="field resize-param">
+                  <label for="resizeHeight" data-i18n="resizeHeight">输出高</label>
+                  <input id="resizeHeight" type="number" min="1" step="1" value="300">
+                </div>
+                <div class="field recover-resize-param recover-crop-param">
+                  <label for="targetWidth" data-i18n="targetWidth">目标宽</label>
+                  <input id="targetWidth" type="number" min="1" step="1" placeholder="512">
+                </div>
+                <div class="field recover-resize-param recover-crop-param">
+                  <label for="targetHeight" data-i18n="targetHeight">目标高</label>
+                  <input id="targetHeight" type="number" min="1" step="1" placeholder="512">
+                </div>
+              </div>
+
+              <div class="inline-grid brightness-param recover-brightness-param">
+                <div class="field">
+                  <label for="brightnessRatio" data-i18n="brightnessRatio">亮度比例</label>
+                  <input id="brightnessRatio" type="number" min="0.05" step="0.05" value="0.9">
+                </div>
+              </div>
+
+              <div class="inline-grid shelter-param salt-param">
+                <div class="field shelter-param">
+                  <label for="shelterRatio" data-i18n="shelterRatio">遮挡比例</label>
+                  <input id="shelterRatio" type="number" min="0.01" max="0.9" step="0.01" value="0.1">
+                </div>
+                <div class="field shelter-param">
+                  <label for="shelterCount" data-i18n="shelterCount">遮挡次数</label>
+                  <input id="shelterCount" type="number" min="1" step="1" value="3">
+                </div>
+                <div class="field salt-param">
+                  <label for="saltRatio" data-i18n="saltRatio">噪声比例</label>
+                  <input id="saltRatio" type="number" min="0.0001" max="0.8" step="0.001" value="0.01">
+                </div>
+                <div class="field shelter-param salt-param">
+                  <label for="randomSeed" data-i18n="randomSeed">随机种子</label>
+                  <input id="randomSeed" type="number" step="1" value="1">
+                </div>
+              </div>
+
+              <div class="inline-grid rotate-param recover-rotate-param">
+                <div class="field">
+                  <label for="angle" data-i18n="angle">角度</label>
+                  <input id="angle" type="number" step="1" value="45">
+                </div>
+              </div>
+
+              <div class="inline-grid estimate-param">
+                <div class="field">
+                  <label for="estimateMinScale" data-i18n="estimateMinScale">最小比例</label>
+                  <input id="estimateMinScale" type="number" min="0.05" step="0.05" value="0.5">
+                </div>
+                <div class="field">
+                  <label for="estimateMaxScale" data-i18n="estimateMaxScale">最大比例</label>
+                  <input id="estimateMaxScale" type="number" min="0.05" step="0.05" value="2">
+                </div>
+                <div class="field">
+                  <label for="estimateSteps" data-i18n="estimateSteps">搜索步数</label>
+                  <input id="estimateSteps" type="number" min="3" max="60" step="1" value="24">
+                </div>
+              </div>
+            </div>
+
+            <div class="status" id="status" role="status" aria-live="polite">就绪</div>
+
+            <div class="actions">
+              <button class="primary" id="runButton" type="button" data-i18n="embedAction">嵌入水印</button>
+              <a class="download is-disabled" id="downloadLink" download="watermarked.png" aria-disabled="true" data-i18n="download">下载</a>
+            </div>
 
             <dl class="facts">
               <div>
-                <dt data-i18n="idLabel">64-bit ID</dt>
-                <dd id="watermarkId">-</dd>
+                <dt data-i18n="payloadLabel">载荷</dt>
+                <dd id="payloadInfo">-</dd>
               </div>
               <div>
-                <dt data-i18n="imageLabel">Image</dt>
+                <dt data-i18n="shapeLabel">形状</dt>
+                <dd id="shapeInfo">-</dd>
+              </div>
+              <div>
+                <dt data-i18n="imageLabel">图片</dt>
                 <dd id="imageInfo">-</dd>
               </div>
             </dl>
           </section>
 
           <section class="panel preview" aria-label="Preview">
+            <div class="panel-head">
+              <span data-i18n="preview">预览</span>
+              <button class="ghost" id="resetImageButton" type="button" data-i18n="resetImage">还原载入图</button>
+            </div>
             <div class="preview-frame" id="previewFrame">
               <canvas id="previewCanvas" width="960" height="640"></canvas>
-              <div class="empty" id="emptyState" data-i18n="empty">No photo selected</div>
+              <div class="empty" id="emptyState" data-i18n="empty">未选择图片</div>
             </div>
+          </section>
+
+          <section class="panel results" aria-label="Results">
+            <div class="panel-head">
+              <span data-i18n="result">结果</span>
+              <a class="ghost-link is-disabled" id="resultDownloadLink" download="extracted-watermark.png" aria-disabled="true" data-i18n="downloadResult">下载结果</a>
+            </div>
+            <pre id="resultText">-</pre>
+            <canvas id="resultCanvas" width="320" height="180"></canvas>
           </section>
         </div>
 
-        <footer data-i18n="footer">
-          Browser-only DWT-DCT-SVD implementation based on the MIT licensed blind_watermark project.
+        <footer>
+          <span data-i18n="footer">DWT-DCT-SVD / MIT</span>
         </footer>
       </section>
     </main>
 
     <div class="toast" id="toast" role="alert" aria-live="assertive" aria-hidden="true">
-      <div class="toast-title" id="toastTitle">Verification result</div>
+      <div class="toast-title" id="toastTitle">Result</div>
       <div class="toast-body" id="toastBody"></div>
       <button class="toast-close" id="toastClose" type="button" aria-label="Close">×</button>
     </div>

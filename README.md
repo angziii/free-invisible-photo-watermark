@@ -12,7 +12,7 @@ Project badges:
 ![Browser only](https://img.shields.io/badge/runtime-browser--only-006c67)
 ![Local processing](https://img.shields.io/badge/privacy-local%20processing-006c67)
 
-A lightweight browser-only tool for adding and verifying invisible photo watermarks.
+A browser-only workspace for embedding, extracting, and stress-testing invisible photo watermarks.
 
 Live site: [watermark.yeangzi.com](https://watermark.yeangzi.com)
 
@@ -22,23 +22,16 @@ Live site: [watermark.yeangzi.com](https://watermark.yeangzi.com)
 
 ## What it does
 
-- Embeds an invisible 64-bit watermark ID into PNG, JPEG, and WebP images.
-- Verifies a watermarked image locally in the browser.
+- Embeds and extracts text watermarks, image watermarks, raw bit watermarks, and short 64-bit ID watermarks.
+- Supports the README-style extraction metadata: text/bit payload length and image watermark width/height.
 - Keeps image processing on the user's device. No image upload or server-side processing is required.
-- Supports an optional secret key. Use the same key for embedding and verification.
+- Supports separate image and watermark passwords.
+- Includes an attack lab for crop, resize, brightness, shelter, salt-and-pepper noise, rotation, and common recovery steps.
 - Includes English and Chinese UI.
 
-## Why 64-bit
+## Payload size
 
-This app stores a fixed 64-bit ID derived from the user's watermark line. The ID is short, so each bit can be repeated many times across the image, which improves robustness.
-
-Recovering the original text directly would require embedding the text itself:
-
-- ASCII text usually costs about 8 bits per character.
-- Chinese text in UTF-8 usually costs about 24 bits per character.
-- Length metadata and error correction add even more bits.
-
-Longer payloads are easier to damage through cropping, compression, resizing, brightness changes, and other edits. For that reason this app verifies the watermark ID instead of trying to restore arbitrary original text.
+Short payloads remain more robust because each bit can be repeated more often across the image. Text and image watermarks are recoverable now, but they need more bits than a 64-bit ID and can degrade sooner under heavy cropping, compression, resizing, brightness changes, and other edits.
 
 ## How it works
 
@@ -73,8 +66,8 @@ Core files:
 
 - `index.html` - app shell
 - `assets/app.css` - UI styles
-- `assets/app.js` - browser UI, i18n, download and verification flow
-- `assets/watermark-worker.js` - DWT-DCT-SVD watermark implementation
+- `assets/app.js` - browser UI, i18n, download, extraction, and attack flow
+- `assets/watermark-worker.js` - DWT-DCT-SVD watermark, extraction, and image attack implementation
 - `vercel.json` - Vercel static deployment config
 
 ## Deployment
@@ -91,9 +84,7 @@ npx vercel --prod --yes
 
 ## Limitations
 
-Invisible watermarks are not magic. The watermark is most reliable when the image is not heavily transformed. Rotating back to the original orientation, preserving the original crop position, and avoiding aggressive recompression all improve verification.
-
-The current app verifies a 64-bit ID. It does not decrypt or restore arbitrary original text.
+Invisible watermarks are not magic. The watermark is most reliable when the image is not heavily transformed. Rotating back to the original orientation, preserving the original crop position, and avoiding aggressive recompression all improve extraction quality.
 
 ## License
 
