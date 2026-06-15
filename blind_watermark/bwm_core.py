@@ -12,22 +12,44 @@ from .pool import AutoPool
 
 
 class WaterMarkCore:
-    def __init__(self, password_img=1, mode='common', processes=None):
+    def __init__(self, password_img=1, mode='common', processes=None,
+                 adaptive=False, jpeg_aware=False):
         self.block_shape = np.array([4, 4])
         self.password_img = password_img
-        self.d1, self.d2 = 36, 20  # d1/d2 越大鲁棒性越强,但输出图片的失真越大
+        self.d1_base, self.d2_base = 36, 20
+        self.d1, self.d2 = self.d1_base, self.d2_base
+        self.adaptive = adaptive
+        self.jpeg_aware = jpeg_aware
 
         # init data
-        self.img, self.img_YUV = None, None  # self.img 是原图，self.img_YUV 对像素做了加白偶数化
-        self.ca, self.hvd, = [np.array([])] * 3, [np.array([])] * 3  # 每个通道 dct 的结果
-        self.ca_block = [np.array([])] * 3  # 每个 channel 存一个四维 array，代表四维分块后的结果
-        self.ca_part = [np.array([])] * 3  # 四维分块后，有时因不整除而少一部分，self.ca_part 是少这一部分的 self.ca
+        self.img, self.img_YUV = None, None
+        self.ca, self.hvd, = [np.array([])] * 3, [np.array([])] * 3
+        self.ca_block = [np.array([])] * 3
+        self.ca_part = [np.array([])] * 3
 
-        self.wm_size, self.block_num = 0, 0  # 水印的长度，原图片可插入信息的个数
+        self.wm_size, self.block_num = 0, 0
         self.pool = AutoPool(mode=mode, processes=processes)
 
         self.fast_mode = False
-        self.alpha = None  # 用于处理透明图
+        self.alpha = None
+
+        # JPEG-aware frequency mask: keep low+mid frequencies, zero high
+        if self.jpeg_aware:
+            self._jpeg_mask = self._build_jpeg_mask()
+
+    def _build_jpeg_mask(self):
+        mask = np.ones(self.block_shape, dtype=np.float32)
+        threshold = 3
+        for u in range(self.block_shape[0]):
+            for v in range(self.block_shape[1]):
+                if u + v > threshold:
+                    mask[u, v] = 0
+        return mask
+
+    def _compute_block_d(self, block_dct):
+        energy = np.sqrt(np.sum(block_dct ** 2) / block_dct.size)
+        scale = max(0.5, min(2.0, energy / 200.0))
+        return self.d1_base * scale, self.d2_base * scale
 
     def init_block_index(self):
         self.block_num = self.ca_block_shape[0] * self.ca_block_shape[1]
@@ -78,16 +100,23 @@ class WaterMarkCore:
 
     def block_add_wm_slow(self, arg):
         block, shuffler, i = arg
-        # dct->(flatten->加密->逆flatten)->svd->打水印->逆svd->(flatten->解密->逆flatten)->逆dct
         wm_1 = self.wm_bit[i % self.wm_size]
         block_dct = dct(block)
 
-        # 加密（打乱顺序）
+        if self.jpeg_aware:
+            block_dct = block_dct * self._jpeg_mask
+
         block_dct_shuffled = block_dct.flatten()[shuffler].reshape(self.block_shape)
         u, s, v = svd(block_dct_shuffled)
-        s[0] = (s[0] // self.d1 + 1 / 4 + 1 / 2 * wm_1) * self.d1
-        if self.d2:
-            s[1] = (s[1] // self.d2 + 1 / 4 + 1 / 2 * wm_1) * self.d2
+
+        if self.adaptive:
+            d1, d2 = self._compute_block_d(block_dct_shuffled)
+        else:
+            d1, d2 = self.d1, self.d2
+
+        s[0] = (s[0] // d1 + 1 / 4 + 1 / 2 * wm_1) * d1
+        if d2:
+            s[1] = (s[1] // d2 + 1 / 4 + 1 / 2 * wm_1) * d2
 
         block_dct_flatten = np.dot(u, np.dot(np.diag(s), v)).flatten()
         block_dct_flatten[shuffler] = block_dct_flatten.copy()
@@ -145,13 +174,23 @@ class WaterMarkCore:
 
     def block_get_wm_slow(self, args):
         block, shuffler = args
-        # dct->flatten->加密->逆flatten->svd->解水印
-        block_dct_shuffled = dct(block).flatten()[shuffler].reshape(self.block_shape)
+        block_dct = dct(block)
+
+        if self.jpeg_aware:
+            block_dct = block_dct * self._jpeg_mask
+
+        block_dct_shuffled = block_dct.flatten()[shuffler].reshape(self.block_shape)
 
         u, s, v = svd(block_dct_shuffled)
-        wm = (s[0] % self.d1 > self.d1 / 2) * 1
-        if self.d2:
-            tmp = (s[1] % self.d2 > self.d2 / 2) * 1
+
+        if self.adaptive:
+            d1, d2 = self._compute_block_d(block_dct_shuffled)
+        else:
+            d1, d2 = self.d1, self.d2
+
+        wm = (s[0] % d1 > d1 / 2) * 1
+        if d2:
+            tmp = (s[1] % d2 > d2 / 2) * 1
             wm = (wm * 3 + tmp * 1) / 4
         return wm
 
@@ -181,10 +220,11 @@ class WaterMarkCore:
         return wm_block_bit
 
     def extract_avg(self, wm_block_bit):
-        # 对循环嵌入+3个 channel 求平均
         wm_avg = np.zeros(shape=self.wm_size)
         for i in range(self.wm_size):
-            wm_avg[i] = wm_block_bit[:, i::self.wm_size].mean()
+            repetitions = wm_block_bit[:, i::self.wm_size]
+            weights = np.abs(repetitions - 0.5) * 2 + 1e-10
+            wm_avg[i] = np.average(repetitions, weights=weights)
         return wm_avg
 
     def extract(self, img, wm_shape):

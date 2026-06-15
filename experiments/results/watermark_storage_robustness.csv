@@ -1,0 +1,21 @@
+index,experiment,category,attack,attacked_psnr_db,python_original_text_bits,python_original_text_accuracy,python_original_text_bit_errors,python_original_text_exact,stored_id_64_bits,stored_id_64_accuracy,stored_id_64_bit_errors,stored_id_64_exact,winner
+1,jpeg_q95,compression_blur,JPEG quality 95,41.45,215,100.0,0,True,64,100.0,0,True,tie
+2,jpeg_q85,compression_blur,JPEG quality 85,39.93,215,100.0,0,True,64,100.0,0,True,tie
+3,jpeg_q75,compression_blur,JPEG quality 75,37.11,215,100.0,0,True,64,100.0,0,True,tie
+4,jpeg_q60,compression_blur,JPEG quality 60,35.47,215,100.0,0,True,64,100.0,0,True,tie
+5,jpeg_q45,compression_blur,JPEG quality 45,34.39,215,76.74,50,False,64,70.31,19,False,python_original_text
+6,gaussian_blur_k3,compression_blur,Gaussian blur 3x3,34.67,215,100.0,0,True,64,100.0,0,True,tie
+7,gaussian_blur_k5,compression_blur,Gaussian blur 5x5,32.08,215,100.0,0,True,64,100.0,0,True,tie
+8,gaussian_blur_k9,compression_blur,Gaussian blur 9x9,28.7,215,100.0,0,True,64,100.0,0,True,tie
+9,rotate_neg10,rotation,Rotate -10 degrees,11.45,215,53.02,101,False,64,45.31,35,False,python_original_text
+10,rotate_neg5,rotation,Rotate -5 degrees,13.57,215,53.49,100,False,64,48.44,33,False,python_original_text
+11,rotate_neg2,rotation,Rotate -2 degrees,16.91,215,66.98,71,False,64,67.19,21,False,stored_id_64
+12,rotate_pos2,rotation,Rotate +2 degrees,17.1,215,65.58,74,False,64,70.31,19,False,stored_id_64
+13,rotate_pos5,rotation,Rotate +5 degrees,13.7,215,57.67,91,False,64,45.31,35,False,python_original_text
+14,rotate_pos10,rotation,Rotate +10 degrees,11.54,215,52.56,102,False,64,48.44,33,False,python_original_text
+15,scale_down_50_restore,scale_crop,"Scale 50%, restore to original size",31.62,215,100.0,0,True,64,100.0,0,True,tie
+16,scale_down_75_restore,scale_crop,"Scale 75%, restore to original size",34.75,215,100.0,0,True,64,100.0,0,True,tie
+17,scale_up_125_restore,scale_crop,"Scale 125%, restore to original size",43.05,215,100.0,0,True,64,100.0,0,True,tie
+18,scale_up_150_restore,scale_crop,"Scale 150%, restore to original size",45.36,215,100.0,0,True,64,100.0,0,True,tie
+19,crop_center_10_restore,scale_crop,"Center crop 10%, restore to original size",13.54,215,53.49,100,False,64,46.88,34,False,python_original_text
+20,crop_center_25_restore,scale_crop,"Center crop 25%, restore to original size",11.49,215,47.91,112,False,64,48.44,33,False,stored_id_64

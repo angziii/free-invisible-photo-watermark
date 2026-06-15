@@ -1,0 +1,4 @@
+payload_key,rows,python_original_text_avg_accuracy,stored_id_64_avg_accuracy,python_original_text_exact,stored_id_64_exact,python_original_text_wins,stored_id_64_wins,ties,winner
+ascii_sentence,200,79.42,81.7,92,103,23,86,91,stored_id_64
+mixed_order,200,80.23,80.76,91,101,47,63,90,stored_id_64
+readme_zh,200,81.1,79.75,96,104,59,45,96,python_original_text

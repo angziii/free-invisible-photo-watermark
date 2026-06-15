@@ -87,7 +87,7 @@ def estimate_crop_parameters(original_file=None, template_file=None, ori_img=Non
 
 def recover_crop(template_file=None, tem_img=None, output_file_name=None, loc=None, image_o_shape=None):
     if template_file:
-        tem_img = cv2.imread(template_file)  # template image
+        tem_img = cv2.imread(template_file)
 
     (x1, y1, x2, y2) = loc
 
@@ -98,3 +98,45 @@ def recover_crop(template_file=None, tem_img=None, output_file_name=None, loc=No
     if output_file_name:
         cv2.imwrite(output_file_name, img_recovered)
     return img_recovered
+
+
+def _rotate_image(img, angle):
+    h, w = img.shape[:2]
+    center = (w / 2, h / 2)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    return cv2.warpAffine(img, M, (w, h))
+
+
+def _measure_separation(wm_block_bit, wm_size):
+    wm_avg = np.zeros(wm_size)
+    for i in range(wm_size):
+        repetitions = wm_block_bit[:, i::wm_size]
+        weights = np.abs(repetitions - 0.5) * 2 + 1e-10
+        wm_avg[i] = np.average(repetitions, weights=weights)
+
+    threshold = (wm_avg.min() + wm_avg.max()) / 2
+    class0 = wm_avg[wm_avg <= threshold]
+    class1 = wm_avg[wm_avg > threshold]
+    if len(class0) == 0 or len(class1) == 0:
+        return 0
+    between = (class0.mean() - class1.mean()) ** 2
+    within = class0.var() + class1.var()
+    return between / (within + 1e-10)
+
+
+def estimate_rotation_angle(img, watermarker, angle_range=(-15, 15), steps=30, wm_size=None):
+    best_angle, best_confidence = 0, -1
+    if wm_size is None:
+        wm_size = watermarker.original_wm_size if watermarker.original_wm_size > 0 else watermarker.wm_size
+
+    for angle in np.linspace(angle_range[0], angle_range[1], steps):
+        rotated = _rotate_image(img, angle)
+        try:
+            wm_block_bit = watermarker.bwm_core.extract_raw(img=rotated)
+            confidence = _measure_separation(wm_block_bit, wm_size)
+            if confidence > best_confidence:
+                best_angle, best_confidence = angle, confidence
+        except Exception:
+            continue
+
+    return best_angle

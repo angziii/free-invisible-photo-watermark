@@ -1,0 +1,11 @@
+image_key,rows,python_original_text_avg_accuracy,stored_id_64_avg_accuracy,python_original_text_exact,stored_id_64_exact,python_original_text_wins,stored_id_64_wins,ties,winner
+checker,60,83.34,83.57,33,33,11,16,33,stored_id_64
+dark_scene,60,82.9,84.24,31,32,13,17,30,stored_id_64
+geometric,60,82.99,82.45,30,32,15,15,30,python_original_text
+gradient,60,80.02,80.94,33,33,11,16,33,stored_id_64
+high_texture,60,65.72,66.72,8,18,21,31,8,stored_id_64
+lena_photo,60,83.61,83.07,32,33,12,16,32,python_original_text
+low_contrast,60,83.11,83.98,30,33,10,20,30,stored_id_64
+noise_photo,60,78.77,79.45,27,33,10,23,27,stored_id_64
+ori_photo,60,79.25,80.78,25,32,7,28,25,stored_id_64
+text_page,60,82.76,82.14,30,29,19,12,29,python_original_text
